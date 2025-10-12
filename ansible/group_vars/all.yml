@@ -3,26 +3,17 @@
 # These can be overridden by the install_custom_shell.sh script
 # or by passing --extra-vars="key=value" to ansible-playbook.
 
-# --- Shell & Prompt Selection ---
-# Set these or pass via --extra-vars for testing
-preferred_shell: "/usr/bin/zsh"  # Options: "/usr/bin/zsh" or "/bin/bash"
-prompt_framework: "starship"     # Options: "starship" or "p10k"
+# --- Shell & Prompt Selection (set by install_custom_shell.sh) ---
+# preferred_shell: set by script
+# shell_name: set by script  
+# prompt_framework: set by script
+
+# --- Setup Mode (set by install_custom_shell.sh) ---
+# setup_mode: set by script (new/update/clean)
 
 # --- Backup Configuration ---
 backup_existing_configs: true
 backup_dir: "{{ user_home }}/.config_backups/{{ ansible_date_time.iso8601_basic_short }}"
-
-# --- Starship Configuration ---
-starship_template: "tokyo-night"  # Must match filename in starship_templates/ (without .toml)
-                                   # Available: bracketed-segments, catppuccin-powerline, jetpack,
-                                   #            nerd-font-symbols, no-empty-icons, no-nerd-font,
-                                   #            no-runtime-versions, pastel-powerline, plain-text-symbols,
-                                   #            pure-preset, tokyo-night
-
-# --- Powerlevel10k Configuration ---
-p10k_template: "p10k-rainbow"  # Must match filename in p10k_templates/ (without .zsh)
-                                # Available: p10k-classic, p10k-lean-8colors, p10k-lean,
-                                #            p10k-pure, p10k-rainbow, p10k-robbyrussell
 
 # --- Zsh Plugins Configuration ---
 # For Starship standalone setup (without Oh My Zsh)
@@ -37,58 +28,6 @@ omz_custom_path: "{{ omz_path }}/custom"
 omz_themes_path: "{{ omz_custom_path }}/themes"
 omz_plugins_path: "{{ omz_custom_path }}/plugins"
 p10k_theme_path_omz: "{{ omz_themes_path }}/powerlevel10k"
-
-# --- Default Tool Installation ---
-# Core Tools
-install_zsh: true  # Install Zsh if not present and preferred_shell is zsh
-
-# --- DevOps Essentials ---
-# Containerization
-install_docker: true # Install Docker Engine
-install_kubectl: false # Install kubectl for Kubernetes
-install_helm: false # Install Helm for Kubernetes
-install_docker_compose: true # Install Docker Compose v2 (plugin)
-
-# Infrastructure as Code (IaC) and Cloud CLIs
-install_terraform: true # Install Terraform by HashiCorp
-install_packer: false # Install Packer by HashiCorp
-install_ansible: true # Install Ansible for automation
-install_pulumi: false # Install Pulumi for IaC
-install_awscli: false
-install_gcloud: false
-install_azurecli: false
-
-# Networking & Security
-install_nettools: true # Install networking tools (net-tools package)
-install_nmap: true     # Install nmap for network scanning
-install_iperf3: true   # Install iperf3 for network performance testing
-
-# --- Full Stack & AI/ML Essentials ---
-# Python
-install_python: true
-python_versions:
-  - "3.8"
-  - "3.11"
-
-# Python linters and formatters
-install_flake8: true # Linter
-install_black: true # Formatter
-install_isort: true # Import sorter
-
-# Node.js
-install_nvm: true # Install NVM (Node Version Manager)
-
-# Package Managers
-install_pip: true # Install pip for Python
-install_uv: true # Universal Version Manager for Python tools
-
-# --- Common Utilities ---
-install_git: true # Version control
-install_curl: true # Download utility
-install_wget: true # Download utility
-install_jq: true # JSON processor
-install_ripgrep: true # Faster grep
-install_fd: true      # Faster find
 
 # Set to true to install all available fonts
 install_all_fonts: false
@@ -108,7 +47,3 @@ starship_config_path: "{{ config_dir }}/starship.toml"
 
 # P10k configuration file path
 p10k_config_path: "{{ user_home }}/.p10k.zsh"
-
-# --- Git User Info (Optional - Used by common role) ---
-# git_user_name: "Your Name"
-# git_user_email: "your.email@example.com"

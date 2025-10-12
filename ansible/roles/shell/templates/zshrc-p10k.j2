@@ -1,3 +1,10 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Created by Ansible for Powerlevel10k setup
 # -*- mode: zsh -*-
 
@@ -31,7 +38,6 @@ setopt SHARE_HISTORY
 # ----------------------------------------------------------------------
 # Oh My Zsh Configuration
 # ----------------------------------------------------------------------
-export ZSH="{{ omz_path }}"
 
 # Set theme to Powerlevel10k
 ZSH_THEME="powerlevel10k/powerlevel10k"
@@ -47,9 +53,6 @@ plugins=(
     zsh-autosuggestions
     zsh-syntax-highlighting
 )
-
-# Source Oh My Zsh
-source $ZSH/oh-my-zsh.sh
 
 # ----------------------------------------------------------------------
 # Zsh Completion System
@@ -160,3 +163,4 @@ alias pro='cd ~/repos/professional'
 # To customize, run: p10k configure
 # ----------------------------------------------------------------------
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+source ~/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme

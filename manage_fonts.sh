@@ -160,7 +160,7 @@ show_font_menu() {
     
     echo
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║                        Font ${action^} Menu                           ║${NC}"
+    echo -e "${CYAN}║                        Font ${action^} Menu                      ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════╝${NC}"
     echo
     

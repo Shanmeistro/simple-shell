@@ -16,7 +16,7 @@
 # ============================================================================
 - name: Set recommended_fonts based on framework
   ansible.builtin.set_fact:
-    fonts_recommended_fonts: |
+    recommended_fonts: |
       {%- if prompt_framework == 'p10k' -%}
       ['MesloLGS', 'Hack', 'FiraCode', 'CascadiaCode']
       {%- elif prompt_framework == 'starship' -%}
@@ -33,7 +33,7 @@
   ansible.builtin.debug:
     msg: |
       Recommended fonts for {{ prompt_framework | default('your setup') }}:
-      {% for font in fonts_recommended_fonts %}
+      {% for font in recommended_fonts %}
       - {{ font }} Nerd Font
       {% endfor %}
 
@@ -95,7 +95,7 @@
 - name: Install recommended fonts for framework
   ansible.builtin.shell: |
     cd {{ playbook_dir }}/..
-    ./manage_fonts.sh --ansible install {{ fonts_recommended_fonts | join(' ') }}
+    ./manage_fonts.sh --ansible install {{ recommended_fonts | join(' ') }}
   register: fonts_install_recommended_result
   when:
     - nerd_fonts_to_install is not defined or nerd_fonts_to_install | length == 0
@@ -119,7 +119,7 @@
   ansible.builtin.debug:
     msg: |
       Font Installation Summary:
-      {{ fonts_status.stdout_lines | join('\n') }}
+      {{ fonts_status.stdout | default('No status information available') }}
 
       {% if prompt_framework == 'p10k' %}
       For Powerlevel10k: Restart your terminal and run 'p10k configure' to test the fonts.
@@ -180,17 +180,17 @@
              - GNOME Terminal: Preferences > Profiles > Text > Custom font
 
           3. Verify font installation:
-             Linux: fc-list | grep -i "{{ fonts_recommended_fonts[0] }}"
+             Linux: fc-list | grep -i "{{ recommended_fonts[0] }}"
              macOS: Font Book application
 
           4. If symbols still don't appear, your terminal may need a Nerd Font variant:
              - Try the "Mono" version for fixed-width requirements
              - Use "Propo" version for proportional spacing
 
-      when:
-        - fonts_install_result is defined and fonts_install_result.rc != 0
-        - fonts_install_all_result is defined and fonts_install_all_result.rc != 0
-        - fonts_install_recommended_result is defined and fonts_install_recommended_result.rc != 0
+      when: >
+        (fonts_install_result is defined and fonts_install_result is failed) or
+        (fonts_install_all_result is defined and fonts_install_all_result is failed) or
+        (fonts_install_recommended_result is defined and fonts_install_recommended_result is failed)
 
   rescue:
     - name: Font installation failure notice
@@ -200,7 +200,7 @@
 
           Manual installation options:
           1. Download fonts from: https://www.nerdfonts.com/font-downloads
-          2. Install recommended fonts: {{ fonts_recommended_fonts | join(', ') }}
+          2. Install recommended fonts: {{ recommended_fonts | join(', ') }}
           3. Configure your terminal to use a Nerd Font
           4. Restart your terminal application
           The shell setup will continue, but you may see missing symbols until fonts are installed.

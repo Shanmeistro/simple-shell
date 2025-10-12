@@ -1,6 +1,6 @@
 ---
 - name: Ensure basic utilities are installed
-  become: true
+  become: false
   ansible.builtin.package:
     name:
       - git
@@ -23,17 +23,3 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
     mode: '0755'
-
-- name: Set Git user name (optional)
-  community.general.git_config:
-    name: user.name
-    scope: global
-    value: "{{ git_user_name | default('') }}"
-  when: git_user_name is defined
-
-- name: Set Git user email (optional)
-  community.general.git_config:
-    name: user.email
-    scope: global
-    value: "{{ git_user_email | default('') }}"
-  when: git_user_email is defined

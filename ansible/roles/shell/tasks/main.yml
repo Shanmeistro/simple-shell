@@ -46,7 +46,7 @@
 # ============================================================================
 - name: Create backup directory
   ansible.builtin.file:
-    path: "{{ backup_dir }}"
+    path: "{{ ansible_env.HOME }}/.config_backup"
     state: directory
     mode: '0755'
   become: false
@@ -68,10 +68,14 @@
     - { src: "{{ user_home }}/.config/nushell/config.nu", dest: "nushell_config.nu.backup" }
     - { src: "{{ user_home }}/.p10k.zsh", dest: ".p10k.zsh.backup" }
     - { src: "{{ config_dir }}/starship.toml", dest: "starship.toml.backup" }
+  loop_control:
+    index_var: loop_index
   when:
     - backup_existing_configs | default(true)
     - setup_mode in ['update', 'clean']
-    - shell_existing_configs.results[loop.index0].stat.exists
+    - (shell_existing_configs.results[loop_index] is defined) and
+      (shell_existing_configs.results[loop_index].stat is defined) and
+      (shell_existing_configs.results[loop_index].stat.exists)
   failed_when: false
 
 - name: Display backup location

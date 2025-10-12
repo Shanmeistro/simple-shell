@@ -1,61 +1,20 @@
 ---
-- name: Install core system utilities
-  become: true
-  ansible.builtin.package:
-    name:
-      - htop
-      - tmux
-      - vim # Or consider 'neovim' here if you prefer
-      - ripgrep
-    state: present
-  register: core_utils_result
-  failed_when: core_utils_result is defined and core_utils_result.failed
+- name: Stat existing tmux config
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.tmux.conf"
+  register: tmux_stat
+  become: false
 
-- name: Install networking tools (legacy and modern)
-  become: true
-  ansible.builtin.package:
-    name:
-      - net-tools # Legacy tools (ifconfig, etc.)
-      - iproute2  # Newer tools (ip, ss)
-      - dnsutils
-      - nmap
-      - netcat
-      - traceroute
-      - whois
-    state: present
-  register: networking_tools_result
-  failed_when: networking_tools_result is defined and networking_tools_result.failed
-
-- name: Install monitoring tools
-  become: true
-  ansible.builtin.package:
-    name:
-      - ncdu
-      - iftop
-      - bmon
-      - nethogs
-    state: present
-  register: monitoring_tools_result
-  failed_when: monitoring_tools_result is defined and monitoring_tools_result.failed
-
-- name: Install debugging tools
-  become: true
-  ansible.builtin.package:
-    name:
-      - strace
-      - tcpdump
-      - gdb
-    state: present
-  register: debugging_tools_result
-  failed_when: debugging_tools_result is defined and debugging_tools_result.failed
-
-- name: Configure tmux
-  become: true
+- name: Copy tmux configuration file
   ansible.builtin.copy:
-    src: tmux.conf
+    src: "{{ playbook_dir }}/../configs/.tmux.conf"
     dest: "{{ user_home }}/.tmux.conf"
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
     mode: '0644'
-  register: tmux_config_result
-  failed_when: tmux_config_result is defined and tmux_config_result.failed
+  become: false
+  when: sysadmin_tools_result.changed or not (user_home + '/.tmux.conf') | ansible.builtin.stat | ansible.builtin.json_query('stat.exists')
+  register: tmux_copy_result
+  changed_when: tmux_copy_result is changed
+  failed_when: tmux_copy_result is failed
+  notify: Reload tmux configuration if running

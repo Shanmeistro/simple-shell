@@ -1,10 +1,10 @@
 ---
-- name: Setup local dev environment
+- name: Setup custom shell environment
   hosts: localhost
   connection: local
-  become: false  # Changed from true - critical fix!
+  become: false
   vars:
-    user_home: "{{ ansible_env.HOME }}"  # Use ansible_env.HOME instead of ansible_user_dir
+    user_home: "{{ ansible_env.HOME }}"
     config_dir: "{{ user_home }}/.config"
     local_bin_dir: "{{ user_home }}/.local/bin"
 
@@ -21,32 +21,53 @@
     p10k_theme_path_omz: "{{ omz_themes_path }}/powerlevel10k"
 
   tasks:
-    - name: Include common role (basic setup)
+    - name: Install common utilities and prepare directories
       ansible.builtin.include_role:
         name: common
-      tags:
-        - common
 
-    - name: Include shell role (shell and prompt config)
+    - name: Install and configure shell environment with chosen framework
       ansible.builtin.include_role:
         name: shell
-      tags:
-        - shell
+      when: shell_name is defined and prompt_framework is defined
 
-    - name: Include fonts role (nerd fonts installation)
+    - name: Install nerd-fonts if on Linux or MacOS
       ansible.builtin.include_role:
         name: fonts
-      tags:
-        - fonts
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat', 'Darwin'] and shell_name is defined
 
-    - name: Include sysadmin-tools role
+    - name: Install optional sysadmin tools
       ansible.builtin.include_role:
         name: sysadmin-tools
-      tags:
-        - sysadmin-tools
+      when: install_optional_tools is defined and install_optional_tools
 
-    - name: Include devtools role (development tools)
+    - name: Install optional development tools
       ansible.builtin.include_role:
-        name: devtools
-      tags:
-        - devtools
+        name: dev-tools
+      when: install_dev_tools is defined and install_dev_tools
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: |
+          Shell environment setup completed successfully!
+
+          Configured:
+          - Shell: {{ shell_name | default('not specified') }}
+          - Framework: {{ prompt_framework | default('not specified') }}
+          {% if starship_template is defined %}
+          - Starship template: {{ starship_template }}
+          {% endif %}
+          {% if p10k_template is defined %}
+          - Powerlevel10k template: {{ p10k_template }}
+          {% endif %}
+
+          Additional configuration scripts:
+          - Font installation: ./manage_fonts.sh
+          - Optional tools: ./manage_optional_tools.sh
+      when: shell_name is defined
+
+  tags:
+    - common
+    - shell
+    - fonts
+    - sysadmin_tools
+    - devtools

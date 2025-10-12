@@ -564,6 +564,9 @@ show_category_menu() {
         echo "  b) iftop (Install/Remove/Purge)"
         echo "  c) bmon (Install/Remove/Purge)"
         echo "  d) nethogs (Install/Remove/Purge)"
+        echo "  e) iperf3 (Install/Remove/Purge)"
+        echo "  f) mtr (Install/Remove/Purge)"
+        echo "  g) vnstat (Install/Remove/Purge)"
         ;;
       3)
         echo "  a) net-tools (Install/Remove/Purge)"

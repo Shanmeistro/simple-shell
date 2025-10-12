@@ -88,7 +88,7 @@ Follow these simple steps to set up your awesome development environment:
 ### 1. Clone and Enter Repository
 
 ```bash
-git clone https://github.com/Pet-Projects-with-Shanmeistro/simple-shell.git or git@github.com:Pet-Projects-with-Shanmeistro/simple-shell.git
+git clone https://github.com/Shanmeistro/simple-shell.git or git@github.com:Shanmeistro/simple-shell.git
 cd simple-shell
 ```
 

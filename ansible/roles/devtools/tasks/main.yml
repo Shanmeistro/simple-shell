@@ -5,26 +5,28 @@
     name:
       - python3
       - python3-pip
+      - python3-venv
     state: present
   register: devtools_python_system_install_result
-  failed_when: devtools_python_system_install_result.failed | default(false)
 
-- name: Install uv
+- name: Verify pip3 is available
+  ansible.builtin.command: which pip3
+  register: devtools_pip3_check
+  failed_when: false
+  changed_when: false
+
+- name: Install uv using pip3
   become: true
-  ansible.builtin.pip:
-    name: uv
-    executable: pip3
-    state: present
+  ansible.builtin.command: pip3 install uv
   register: devtools_uv_install_result
-  failed_when: devtools_uv_install_result.failed | default(false)
+  when: devtools_pip3_check is succeeded
+  changed_when: "'Successfully installed' in devtools_uv_install_result.stdout"
+  failed_when: devtools_uv_install_result.rc != 0
 
 - name: Install ruff via uv
   become: true
-  ansible.builtin.command:
-    cmd: uv tool install ruff
+  ansible.builtin.command: uv tool install ruff
   register: devtools_ruff_install_result
+  when: devtools_uv_install_result is succeeded
+  changed_when: "'Successfully installed' in devtools_ruff_install_result.stdout"
   failed_when: devtools_ruff_install_result.rc != 0
-  changed_when: devtools_ruff_install_result.rc == 0
-  when:
-    - devtools_uv_install_result is succeeded
-    - devtools_python_system_install_result is succeeded

@@ -44,7 +44,7 @@ print_header() {
     if [[ "$ANSIBLE_MODE" == "false" ]]; then
         clear
         echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${CYAN}║                    $SCRIPT_NAME v$SCRIPT_VERSION                    ║${NC}"
+        echo -e "${CYAN}║                    $SCRIPT_NAME v$SCRIPT_VERSION                   ║${NC}"
         echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo
     fi

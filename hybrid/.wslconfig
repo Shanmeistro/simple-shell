@@ -1,0 +1,11 @@
+[wsl2]
+processors=6
+memory=8GB
+swap=4GB
+localhostForwarding=true
+nestedVirtualization=true
+vmIdleTimeout=0
+
+# Disk: managed by the VHDX you create manually
+# Set memory and swap sizes as needed
+# I.E 16GB memory, 8GB swap for systems with 32Gb RAM

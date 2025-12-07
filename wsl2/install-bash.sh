@@ -1,0 +1,505 @@
+#!/usr/bin/env bash
+set -e
+
+# Load helper functions
+source ./scripts/helpers.sh
+
+print_header "Bash Environment Setup for WSL2"
+
+# Function to detect if this is a fresh install vs existing system
+detect_install_type() {
+    if [ ! -f ~/.bashrc.backup ] && [ ! -f ~/.bash_profile.backup ]; then
+        echo "fresh"
+    else
+        echo "existing"
+    fi
+}
+
+# Function to backup existing configurations
+backup_existing_configs() {
+    local backup_dir="$HOME/.config/bash-backup-$(date +%Y%m%d-%H%M%S)"
+    
+    print_header "Backing up existing bash configurations"
+    
+    local backed_up=()
+    
+    if [ -f ~/.bashrc ]; then
+        mkdir -p "$backup_dir"
+        cp ~/.bashrc "$backup_dir/" && backed_up+=(".bashrc")
+    fi
+    
+    if [ -f ~/.bash_profile ]; then
+        mkdir -p "$backup_dir"
+        cp ~/.bash_profile "$backup_dir/" && backed_up+=(".bash_profile")
+    fi
+    
+    if [ -f ~/.bash_aliases ]; then
+        mkdir -p "$backup_dir"
+        cp ~/.bash_aliases "$backup_dir/" && backed_up+=(".bash_aliases")
+    fi
+    
+    if [ ${#backed_up[@]} -gt 0 ]; then
+        print_success "Backup created at: $backup_dir"
+        echo "Backed up: ${backed_up[*]}"
+    else
+        echo "No existing bash configurations found to backup"
+    fi
+}
+
+# Function to install bash prerequisites
+install_bash_prerequisites() {
+    print_header "Installing Bash Prerequisites"
+    
+    sudo apt update
+    sudo apt install -y \
+        bash \
+        bash-completion \
+        git \
+        curl \
+        wget \
+        fontconfig \
+        unzip
+    
+    print_success "Bash prerequisites installed"
+}
+
+# Function to install Starship prompt
+install_starship_prompt() {
+    print_header "Installing Starship Prompt"
+    
+    if command -v starship >/dev/null 2>&1; then
+        echo "Starship already installed, updating..."
+        curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+    else
+        curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+    fi
+    
+    print_success "Starship prompt installed"
+}
+
+# Function to install bash-it framework (alternative to oh-my-zsh)
+install_bash_it() {
+    print_header "Installing Bash-it Framework"
+    
+    local bash_it_dir="$HOME/.bash_it"
+    
+    if [ -d "$bash_it_dir" ]; then
+        echo "Bash-it already installed, updating..."
+        cd "$bash_it_dir" && git pull
+    else
+        git clone --depth=1 https://github.com/Bash-it/bash-it.git "$bash_it_dir"
+        "$bash_it_dir/install.sh" --silent
+    fi
+    
+    print_success "Bash-it framework installed"
+}
+
+# Function to install useful bash tools
+install_bash_tools() {
+    print_header "Installing Bash Enhancement Tools"
+    
+    # fzf for fuzzy finding
+    if [ ! -d ~/.fzf ]; then
+        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+        ~/.fzf/install --all --no-bash --no-zsh --no-fish
+    fi
+    
+    # ripgrep for fast search
+    if ! command -v rg >/dev/null 2>&1; then
+        sudo apt install -y ripgrep
+    fi
+    
+    # bat for better cat
+    if ! command -v bat >/dev/null 2>&1; then
+        sudo apt install -y bat
+        # Ubuntu installs it as batcat
+        if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
+            mkdir -p ~/.local/bin
+            ln -sf /usr/bin/batcat ~/.local/bin/bat
+        fi
+    fi
+    
+    # exa for better ls (if available)
+    if ! command -v exa >/dev/null 2>&1; then
+        if apt-cache search --names-only '^exa$' | grep -q exa; then
+            sudo apt install -y exa
+        fi
+    fi
+    
+    print_success "Bash enhancement tools installed"
+}
+
+# Function to install fonts (same as zsh version)
+install_p10k_fonts() {
+    print_header "Installing Powerline/Nerd Fonts"
+    
+    local font_dir="$HOME/.local/share/fonts"
+    mkdir -p "$font_dir"
+    
+    local fonts=(
+        "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
+        "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf"
+        "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf"
+        "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf"
+    )
+    
+    for font_url in "${fonts[@]}"; do
+        local font_name=$(basename "$font_url" | sed 's/%20/ /g')
+        if [ ! -f "$font_dir/$font_name" ]; then
+            echo "Downloading: $font_name"
+            wget -q "$font_url" -O "$font_dir/$font_name"
+        fi
+    done
+    
+    # Refresh font cache
+    fc-cache -fv > /dev/null 2>&1
+    
+    print_success "Fonts installed"
+    echo "Note: Set your Windows Terminal font to 'MesloLGS NF' for best experience"
+}
+
+# Function to create enhanced .bashrc
+create_bashrc_config() {
+    print_header "Creating Enhanced Bash Configuration"
+    
+    cat > ~/.bashrc << 'EOF'
+# Simple Shell Environment - WSL2 Bash Configuration
+# Generated by WSL2 bash installer
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+shopt -s checkwinsize
+
+# Color support
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Enable programmable completion
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Load Bash-it if available
+if [ -f "$HOME/.bash_it/bash_it.sh" ]; then
+    export BASH_IT="$HOME/.bash_it"
+    export BASH_IT_THEME='powerline'
+    source "$BASH_IT/bash_it.sh"
+fi
+
+# Initialize Starship prompt (if not using bash-it theme)
+if command -v starship > /dev/null && [ -z "$BASH_IT_THEME" ]; then
+    eval "$(starship init bash)"
+fi
+
+# WSL2-specific configurations
+export DISPLAY=${DISPLAY:-:0.0}
+
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# Environment variables
+export LANG=en_US.UTF-8
+export EDITOR='vim'
+export PAGER='less'
+
+# Enhanced ls aliases
+if command -v exa > /dev/null; then
+    alias ll='exa -alF'
+    alias la='exa -A'
+    alias l='exa -CF'
+    alias tree='exa --tree'
+else
+    alias ll='ls -alF'
+    alias la='ls -A'
+    alias l='ls -CF'
+fi
+
+# Navigation aliases
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Safe file operations
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Enhanced cat with bat
+if command -v bat > /dev/null; then
+    alias cat='bat --paging=never'
+    alias catp='bat'
+fi
+
+# Git aliases
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+
+# WSL2 specific aliases
+alias open='explorer.exe'
+alias code='code.exe'
+
+# Development aliases
+alias py='python3'
+alias pip='pip3'
+alias serve='python3 -m http.server'
+
+# Docker aliases (if Docker is installed)
+alias dc='docker-compose'
+alias dps='docker ps'
+alias di='docker images'
+
+# FZF integration (if installed)
+if [ -f ~/.fzf.bash ]; then
+    source ~/.fzf.bash
+    
+    # Enhanced FZF commands
+    alias fzfp="fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+    
+    # FZF functions
+    fcd() {
+        local dir
+        dir=$(find . -type d -not -path '*/\.*' 2>/dev/null | fzf +m) && cd "$dir"
+    }
+    
+    fkill() {
+        local pid
+        pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+        [ -n "$pid" ] && echo "$pid" | xargs kill -${1:-9}
+    }
+fi
+
+# Custom functions
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# Search in history
+hsearch() { history | grep "$1"; }
+
+# Extract function for various archives
+extract() {
+    if [ -f "$1" ]; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"     ;;
+            *.tar.gz)    tar xzf "$1"     ;;
+            *.bz2)       bunzip2 "$1"     ;;
+            *.rar)       unrar x "$1"     ;;
+            *.gz)        gunzip "$1"      ;;
+            *.tar)       tar xf "$1"      ;;
+            *.tbz2)      tar xjf "$1"     ;;
+            *.tgz)       tar xzf "$1"     ;;
+            *.zip)       unzip "$1"       ;;
+            *.Z)         uncompress "$1"  ;;
+            *.7z)        7z x "$1"        ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# WSL2 specific functions
+wsl-ip() {
+    hostname -I | awk '{print $1}'
+}
+
+win-home() {
+    cd "/mnt/c/Users/$(whoami)"
+}
+
+# System information
+sysinfo() {
+    echo "System Information:"
+    echo "==================="
+    echo "Hostname: $(hostname)"
+    echo "WSL IP: $(wsl-ip)"
+    echo "OS: $(lsb_release -d | cut -f2)"
+    echo "Kernel: $(uname -r)"
+    echo "Shell: $BASH_VERSION"
+    echo "Uptime: $(uptime -p)"
+    echo "Memory: $(free -h | awk '/^Mem:/ { print $3"/"$2 }')"
+    echo "Disk: $(df -h / | awk 'NR==2 { print $3"/"$2" ("$5" used)" }')"
+}
+
+echo "🚀 WSL2 Enhanced Bash Environment loaded successfully!"
+EOF
+    
+    print_success "Created enhanced .bashrc configuration"
+}
+
+# Function to create starship configuration
+create_starship_config() {
+    print_header "Creating Starship Configuration"
+    
+    mkdir -p ~/.config
+    
+    cat > ~/.config/starship.toml << 'EOF'
+# WSL2 Starship Configuration
+# Generated by WSL2 bash installer
+
+format = """
+$os\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$python\
+$nodejs\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+[os]
+disabled = false
+format = "[$symbol]($style) "
+
+[os.symbols]
+Ubuntu = "🐧"
+Windows = "🪟"
+
+[username]
+show_always = true
+format = "[$user]($style)@"
+style_user = "bold blue"
+
+[hostname]
+ssh_only = false
+format = "[$hostname]($style) "
+style = "bold green"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = false
+format = "in [$path]($style)[$read_only]($read_only_style) "
+style = "bold cyan"
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+style = "bold purple"
+
+[git_status]
+format = "([$all_status$ahead_behind]($style)) "
+style = "bold red"
+
+[python]
+format = "via [${symbol}${pyenv_prefix}(${version} )(($virtualenv) )]($style)"
+style = "bold yellow"
+
+[nodejs]
+format = "via [${symbol}(${version} )]($style)"
+style = "bold green"
+
+[docker_context]
+format = "via [${symbol}${context}]($style) "
+style = "bold blue"
+
+[cmd_duration]
+min_time = 2_000
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+EOF
+    
+    print_success "Created starship configuration"
+}
+
+# Main installation flow
+main() {
+    local install_type=$(detect_install_type)
+    
+    echo "Detected installation type: $install_type"
+    echo ""
+    
+    if [ "$install_type" = "existing" ]; then
+        echo "Found existing bash configurations."
+        read -p "Create backup before proceeding? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            backup_existing_configs
+        fi
+    fi
+    
+    # Core installation steps
+    install_bash_prerequisites
+    install_starship_prompt
+    install_bash_it
+    install_bash_tools
+    install_p10k_fonts
+    create_bashrc_config
+    create_starship_config
+    
+    print_header "Enhanced Bash Environment Setup Complete!"
+    echo ""
+    echo "🎉 Your WSL2 enhanced bash environment is ready!"
+    echo ""
+    echo "Features installed:"
+    echo "• Starship prompt (modern, fast prompt)"
+    echo "• Bash-it framework (bash equivalent of oh-my-zsh)"
+    echo "• Enhanced tools: fzf, ripgrep, bat, exa"
+    echo "• MesloLGS NF fonts for better display"
+    echo "• WSL2-optimized configuration"
+    echo ""
+    echo "Next steps:"
+    echo "1. Restart your terminal or run: exec bash"
+    echo "2. Set Windows Terminal font to 'MesloLGS NF'"
+    echo "3. Try commands: fcd, fzfp, sysinfo"
+    echo ""
+    echo "To switch between prompts:"
+    echo "• Edit ~/.config/starship.toml for Starship customization"
+    echo "• Use 'bash-it show themes' to see Bash-it themes"
+    echo ""
+}
+
+# Handle command line arguments
+case "${1:-}" in
+    --help|-h)
+        echo "WSL2 Enhanced Bash Environment Installer"
+        echo ""
+        echo "Usage: $0 [options]"
+        echo ""
+        echo "Options:"
+        echo "  --help, -h    Show this help"
+        echo ""
+        echo "This script installs:"
+        echo "• Enhanced Bash with modern tools"
+        echo "• Starship prompt (fast, customizable)"
+        echo "• Bash-it framework"
+        echo "• Useful CLI tools (fzf, ripgrep, bat)"
+        echo "• MesloLGS NF fonts"
+        echo "• WSL2-optimized configuration"
+        echo ""
+        exit 0
+        ;;
+esac
+
+# Run main function
+main "$@"

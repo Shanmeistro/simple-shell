@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) (optional, but good to know).
 
+## [0.1.4] - 2025-12-07
+
+### Added
+
+- **🖥️ Platform-Specific Configuration Scripts**:
+  - **Linux Platform** (`linux/`): Complete development environment setup for Debian-based distributions
+    - Interactive `bootstrap.sh` with shell and tool selection
+    - Core package installation via apt with modern CLI tools (exa, bat, ripgrep, fd, fzf)
+    - Enhanced Zsh setup with Oh My Zsh + Powerlevel10k + useful plugins
+    - Enhanced Bash setup with Bash-it framework + Starship prompt
+    - Docker Engine installation with Docker Compose and container tools
+    - Kubernetes ecosystem: kubectl, Helm, k9s, kubectx/kubens
+    - Node.js with multiple package managers (npm, yarn, pnpm)
+
+  - **macOS Platform** (`macos/`): Comprehensive setup for macOS 11-15 with Apple Silicon support
+    - Architecture-aware installation (Intel x86_64 and Apple Silicon ARM64)
+    - Homebrew-based package management with Cask support
+    - Xcode Command Line Tools automatic installation
+    - Enhanced shell environments with Nerd Fonts integration
+    - Docker Desktop with additional container utilities
+    - macOS-specific aliases and system integration features
+
+- **🌟 Optional Development Environment Installers**:
+  - **Python**: pyenv + poetry + scientific packages (pandas, numpy, matplotlib)
+  - **Go**: Latest Go + comprehensive development toolchain
+  - **Rust**: rustup + cargo ecosystem + modern CLI replacements
+  - **Java**: SDKMAN! + multiple JDK versions (11, 17, 21 LTS) + build tools
+
+- **🛠️ Platform-Specific Helper Systems**:
+  - Linux: Distribution detection, package management functions, dependency handling
+  - macOS: Version compatibility checking, Homebrew architecture detection, app installation
+
+- **📚 Comprehensive Documentation**:
+  - Platform-specific README files with usage examples and troubleshooting
+  - System requirements and compatibility matrices
+  - Post-installation configuration guides
+  - Architecture-specific notes for Apple Silicon vs Intel Macs
+
+### Changed
+
+- **🔧 Updated Root-Level Tool Manager**:
+  - Enhanced `manage_optional_tools.sh` with restored security tools support
+  - Added essential DevOps security tools: nmap, nikto, hydra, sqlmap, john, hashcat, wireshark-cli
+  - Improved cross-platform compatibility with Linux and macOS platform scripts
+
+- **📁 Repository Structure Enhancement**:
+  - Organized platform-specific scripts in dedicated `linux/` and `macos/` folders
+  - Consistent script structure across all platforms (bootstrap → core → shell → optional)
+  - Unified naming conventions and executable permissions
+
+### Technical Improvements
+
+- **🔄 Cross-Platform Consistency**: Same installation flow as existing WSL2 setup
+- **🎯 Architecture Support**: Native Apple Silicon support with Intel compatibility
+- **📦 Package Management**: Platform-appropriate package managers (apt, Homebrew, SDKMAN!, pyenv, nvm, rustup)
+- **🧪 Version Management**: Multiple language versions with easy switching capabilities
+- **🛡️ Error Handling**: Comprehensive error checking and rollback capabilities
+
+### Platform Support Matrix
+
+| Feature | Linux (Debian) | macOS 11-15 | WSL2 |
+|---------|----------------|-------------|------|
+| Shell Enhancement | ✅ Zsh + Bash | ✅ Zsh + Bash | ✅ Zsh + Bash |
+| Docker | ✅ Engine | ✅ Desktop | ✅ Engine |
+| Node.js | ✅ nvm | ✅ nvm | ✅ nvm |
+| Python | ✅ pyenv | ✅ pyenv | ✅ pyenv |
+| Go | ✅ Official | ✅ Homebrew | ✅ Official |
+| Rust | ✅ rustup | ✅ rustup | ✅ rustup |
+| Java | ✅ SDKMAN! | ✅ SDKMAN! | ✅ SDKMAN! |
+| Kubernetes | ✅ kubectl | ✅ kubectl | ✅ kubectl |
+
+### Security Tools Restoration
+
+- **Rationale**: Restored security tools in `manage_optional_tools.sh` based on DevOps engineer requirements
+- **Tools Added**: nmap (network scanning), nikto (web vulnerability scanner), hydra (password cracking), sqlmap (SQL injection), john (password cracking), hashcat (password recovery), wireshark-cli (network analysis)
+- **Installation**: Clean installation without complex dependencies or manual configuration
+
+### Developer Experience
+
+- **🚀 Quick Start**: Single command bootstrap for complete environment setup
+- **🎨 Customizable**: Modular scripts allowing selective installation
+- **🔍 Debugging**: Detailed logging and error reporting for troubleshooting
+- **📖 Documentation**: Platform-specific guides with examples and best practices
+
 ## [0.1.3] - 2025-10-07
 
 ### Added

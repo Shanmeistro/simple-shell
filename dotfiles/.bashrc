@@ -29,7 +29,9 @@ if ! shopt -oq posix; then
 fi
 
 # Kubectl completion (if installed)
-[[ $commands[kubectl] ]] && source <(kubectl completion bash)
+if command -v kubectl &>/dev/null; then
+    source <(kubectl completion bash)
+fi
 
 # ----------------------------------------------------------------------
 # SSH Agent Configuration
@@ -91,19 +93,5 @@ export NVM_DIR="$HOME/.nvm"
 # ----------------------------------------------------------------------
 # Prompt Configuration
 # ----------------------------------------------------------------------
-# Choose ONE of these options:
-
-# Option 1: Starship (recommended - works with both bash and zsh)
-if command -v starship &> /dev/null; then
-    eval "$(starship init bash)"
-fi
-
-# Option 2: Oh My Posh (if you prefer)
-# if command -v oh-my-posh &> /dev/null; then
-#     eval "$(oh-my-posh init bash --config ~/.config/oh-my-posh/theme.json)"
-# fi
-
-# Option 3: Simple custom prompt (fallback if no framework)
-# if ! command -v starship &> /dev/null && ! command -v oh-my-posh &> /dev/null; then
-#     PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-# fi
+# user@host:dir $  — color-coded, no external dependencies
+PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '

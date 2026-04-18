@@ -4,8 +4,33 @@ source ./scripts/helpers.sh
 
 print_header "Installing Docker for Linux"
 
-# Remove old Docker installations
-sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+# Stop and remove any existing Docker installation
+print_header "Removing Existing Docker Installation"
+if systemctl is-active --quiet docker 2>/dev/null; then
+    print_warning "Stopping Docker service..."
+    sudo systemctl stop docker
+    sudo systemctl stop docker.socket 2>/dev/null || true
+    sudo systemctl stop containerd 2>/dev/null || true
+fi
+
+sudo apt-get remove -y \
+    docker \
+    docker-engine \
+    docker.io \
+    containerd \
+    runc \
+    docker-ce \
+    docker-ce-cli \
+    docker-buildx-plugin \
+    docker-compose-plugin \
+    2>/dev/null || true
+
+sudo apt-get autoremove -y 2>/dev/null || true
+
+# Remove leftover Docker data and config
+sudo rm -f /etc/apt/sources.list.d/docker.list
+sudo rm -f /etc/apt/keyrings/docker.gpg
+print_success "Existing Docker installation cleaned up"
 
 # Install Docker prerequisites
 sudo apt-get update

@@ -3,7 +3,84 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/) (optional, but good to know).
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [0.1.5] - 2026-04-18
+
+### Overview
+
+Major refactor. Removed multi-platform complexity and narrowed focus to a single, solid foundation: pure Bash on Debian-based Linux (including WSL2). The hybrid Python/shell installer and macOS/WSL2-specific scripts have been removed. Everything now lives in `linux/` and `dotfiles/`.
+
+### Removed
+
+- `hybrid/` — Python-based installer (setup.py, lib/, Jinja2 templates) removed entirely
+- `macos/` — macOS-specific scripts removed; macOS support planned for a future release
+- `wsl2/` — Replaced by the `linux/` scripts, which are fully compatible with WSL2 Debian-based distros
+- `linux/install-shell.sh` — Zsh/Oh My Zsh installer removed; Zsh support planned for a future release
+- `dotfiles/.zshrc` — Removed alongside Zsh support
+
+### Added
+
+- **`linux/scripts/helpers.sh` — `backup_bashrc` function**
+  - Centralised `.bashrc` backup logic, callable from any script
+  - Saves timestamped backups to `~/.config/simple-shell/backups/`
+
+- **`linux/optional-installers/install-terraform.sh`**
+  - Installs Terraform via the official HashiCorp apt repository
+  - Stops and fully removes any existing Terraform installation before reinstalling
+  - Adds idempotent bash completion to `~/.bashrc`
+
+### Changed
+
+- **`linux/bootstrap.sh`**
+  - Removed interactive shell picker (Zsh vs Bash menu)
+  - Goes directly to Bash configuration after core package install
+  - Calls `backup_bashrc` as the first step, before anything modifies the environment
+  - Simplified optional tool prompts (Docker, Node.js)
+
+- **`linux/install-bash.sh`**
+  - Removed Bash-it framework and Starship prompt installation
+  - Now purely deploys `dotfiles/.bashrc` to `~/.bashrc`
+  - Duplicate backup logic removed — delegated to `backup_bashrc` in `helpers.sh`
+
+- **`linux/scripts/helpers.sh`**
+  - Distro detection expanded to cover: Kali, Raspberry Pi OS, Elementary, Zorin, Parrot, MX Linux
+  - Also accepts any distro with `ID_LIKE=debian` or `ID_LIKE=ubuntu` (catches derivatives automatically)
+  - Unsupported distros now prompt the user to continue rather than silently returning a non-zero exit code
+
+- **`linux/install-docker.sh`**
+  - Added clean removal block before installation: stops `docker`, `docker.socket`, and `containerd` services if running
+  - Full `apt-get remove` + `autoremove` of all Docker packages
+  - Removes stale apt repo file and GPG key before re-adding them
+
+- **`linux/install-kubernetes.sh`**
+  - Added clean removal block: removes existing kubectl, Helm, k9s, kubectx/kubens binaries and apt sources before reinstalling
+  - Fixed `~/.bashrc` completion lines — now uses `grep -qxF` idempotent checks instead of appending duplicate lines on every run
+
+- **`dotfiles/.bashrc`**
+  - Removed Starship and Oh My Posh prompt blocks
+  - Replaced with a clean inline color PS1: `user@host:dir $`
+  - Fixed kubectl completion from zsh-syntax (`$commands[kubectl]`) to standard bash (`command -v kubectl`)
+
+- **`linux/README.md`** — Rewritten to reflect current scripts only; removed references to Zsh, Bash-it, Starship, WSL2 folder, macOS folder
+
+- **`README.md`** (root) — Updated platform support table: WSL2 (Ubuntu/Debian) listed as supported; macOS-only exclusion noted; Terraform added to optional tools; project structure tree updated
+
+### Platform Support
+
+| Distribution | Status |
+|--------------|--------|
+| Ubuntu 20.04+ | Supported |
+| Debian 11+ | Supported |
+| Pop!_OS | Supported |
+| Linux Mint | Supported |
+| Kali Linux | Supported |
+| Raspberry Pi OS | Supported |
+| WSL2 (Ubuntu / Debian) | Supported |
+| Other Debian-based (`ID_LIKE`) | Prompted to continue |
+| macOS | Not supported — see Roadmap |
+
+---
 
 ## [0.1.4] - 2025-12-07
 

@@ -1,129 +1,88 @@
-# Linux Development Environment Setup
+# Linux Setup
 
-This folder contains configuration scripts to set up a comprehensive development environment on **Debian-based Linux distributions** (Ubuntu, Debian, Linux Mint, etc.).
+Scripts for setting up a Bash development environment on Debian-based Linux distributions (Ubuntu, Debian, Pop!_OS, Kali, Raspberry Pi OS, WSL2, and other `apt`-based distros).
+
+---
 
 ## Quick Start
 
 ```bash
-# Run the main bootstrap script
+cd simple-shell/linux
 ./bootstrap.sh
 ```
 
-## Scripts Overview
+The bootstrap will:
+1. Back up your existing `~/.bashrc`
+2. Detect and validate your distribution
+3. Update and upgrade system packages
+4. Install core packages
+5. Deploy the Bash configuration from `dotfiles/.bashrc`
+6. Prompt to optionally install Docker and Node.js
 
-### Core Scripts
+---
 
-- **`bootstrap.sh`** - Main setup script with interactive shell and tool selection
-- **`install-core.sh`** - Installs essential development packages (git, curl, modern CLI tools)
-- **`scripts/helpers.sh`** - Common functions and Linux distribution detection
+## Scripts
 
-### Shell Configuration
+### Core
 
-- **`install-shell.sh`** - Enhanced Zsh with Oh My Zsh, Powerlevel10k, and useful plugins
-- **`install-bash.sh`** - Enhanced Bash with Bash-it framework and Starship prompt
+| Script | Description |
+|--------|-------------|
+| `bootstrap.sh` | Main entry point — runs the full setup in order |
+| `install-core.sh` | Installs essential apt packages (git, curl, vim, jq, tmux, etc.) |
+| `install-bash.sh` | Deploys `dotfiles/.bashrc` to `~/.bashrc` |
+| `scripts/helpers.sh` | Shared functions: print helpers, distro detection, package management, `.bashrc` backup |
 
-### Development Environments
+### Optional
 
-- **`install-node.sh`** - Node.js with npm, yarn, pnpm, and global packages
-- **`install-docker.sh`** - Docker Engine with Docker Compose
-- **`install-kubernetes.sh`** - kubectl, Helm, k9s, kubectx/kubens
+| Script | Description |
+|--------|-------------|
+| `install-docker.sh` | Docker Engine + Docker Compose (stops and removes any existing install first) |
+| `install-kubernetes.sh` | kubectl, Helm, k9s, kubectx/kubens (stops and removes any existing install first) |
+| `install-node.sh` | Node.js via nvm |
+| `optional-installers/install-go.sh` | Go (latest, via official binary) |
+| `optional-installers/install-rust.sh` | Rust via rustup |
+| `optional-installers/install-java.sh` | Java via SDKMAN! |
+| `optional-installers/install-python.sh` | Python via pyenv + poetry |
+| `optional-installers/install-terraform.sh` | Terraform via HashiCorp apt repo (stops and removes any existing install first) |
 
-### Optional Development Languages
-
-- **`optional-installers/install-python.sh`** - Python with pyenv, poetry, and essential packages
-- **`optional-installers/install-go.sh`** - Go with development tools and CLI utilities
-- **`optional-installers/install-rust.sh`** - Rust with cargo tools and modern CLI replacements
-- **`optional-installers/install-java.sh`** - Java with SDKMAN!, multiple JDK versions, and build tools
-
-## Features
-
-### Shell Enhancements
-- **Zsh**: Oh My Zsh + Powerlevel10k theme + useful plugins
-- **Bash**: Bash-it framework + Starship prompt
-- **Modern CLI Tools**: exa, bat, ripgrep, fd, fzf
-- **Nerd Fonts**: For better terminal icons and symbols
-
-### Development Tools
-- **Package Managers**: apt, snap, flatpak support
-- **Version Managers**: pyenv (Python), nvm (Node.js), rustup (Rust)
-- **Container Tools**: Docker, Docker Compose, lazydocker
-- **Kubernetes**: Complete kubectl ecosystem
-- **Code Quality**: ESLint, Prettier, Black, clippy
+---
 
 ## System Requirements
 
-- **OS**: Ubuntu 18.04+, Debian 10+, or other Debian-based distributions
-- **Architecture**: x86_64 (amd64)
-- **Privileges**: sudo access required for package installation
-- **Network**: Internet connection for downloads
+- **OS**: Debian-based distribution with `apt` (Ubuntu 20.04+, Debian 11+, WSL2, etc.)
+- **Architecture**: x86_64
+- **Privileges**: `sudo` access required
+- **Network**: Internet connection for package downloads
 
-## Usage Examples
-
-### Individual Script Execution
-
-```bash
-# Install just the shell environment
-./install-shell.sh
-
-# Install Docker
-./install-docker.sh
-
-# Install Python development environment
-./optional-installers/install-python.sh
-```
-
-### Custom Installation
-
-```bash
-# Install core tools only
-./install-core.sh
-
-# Then selectively install what you need
-./install-node.sh
-./optional-installers/install-go.sh
-```
+---
 
 ## Post-Installation
 
-1. **Restart your terminal** or run `source ~/.zshrc` / `source ~/.bashrc`
-2. **Configure Powerlevel10k**: Run `p10k configure` for Zsh theme customization
-3. **Set up Git**: Configure your git user name and email
-4. **Install VS Code extensions** or your preferred editor setup
+```bash
+source ~/.bashrc
+```
+
+To restore a previous Bash config, timestamped backups are saved to:
+```
+~/.config/simple-shell/backups/
+```
+
+---
 
 ## Troubleshooting
 
-### Common Issues
+**Permission denied on scripts**
+```bash
+chmod +x *.sh optional-installers/*.sh
+```
 
-- **Permission denied**: Ensure scripts are executable (`chmod +x *.sh`)
-- **Package not found**: Update package lists (`sudo apt update`)
-- **Network timeout**: Check internet connection and retry
-- **Disk space**: Ensure adequate free space (2GB+ recommended)
+**Running from wrong directory**
+All scripts must be run from within `linux/` as they source `./scripts/helpers.sh` by relative path:
+```bash
+cd simple-shell/linux
+./bootstrap.sh
+```
 
-### Distribution-Specific Notes
+**Unsupported distribution**
+If your distro is not on the supported list, the installer will warn you and ask whether to continue. It will work on any system with `apt` available.
 
-- **Ubuntu 22.04+**: All features supported
-- **Ubuntu 20.04**: May need manual Python 3.9+ installation
-- **Debian 11+**: All features supported
-- **Linux Mint**: Based on Ubuntu, fully supported
-
-### Getting Help
-
-- Check script output for specific error messages
-- Verify system requirements
-- Ensure sudo access is available
-- Run scripts individually to isolate issues
-
-## Customization
-
-All scripts use variables and functions from `scripts/helpers.sh`. You can:
-
-- Modify package lists in individual scripts
-- Adjust shell configurations in template sections
-- Add custom aliases and functions to shell configs
-- Extend the bootstrap script with additional options
-
-## Related
-
-- **Root Level**: `../manage_optional_tools.sh` - Cross-platform tool installer
-- **WSL2**: `../wsl2/` - Windows Subsystem for Linux setup
-- **macOS**: `../macos/` - macOS development environment setup

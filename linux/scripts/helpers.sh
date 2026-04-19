@@ -44,6 +44,28 @@ check_linux_distro() {
     fi
 }
 
+# Prompt the user to choose an install action.
+# Sets the global INSTALL_ACTION to: remove | update | reinstall | clean
+# Default (Enter with no input) = clean install.
+prompt_install_action() {
+    local tool="$1"
+    echo ""
+    print_header "$tool — Choose Action"
+    echo "  1) Remove only"
+    echo "  2) Update existing installation"
+    echo "  3) Reinstall (remove + clean install)"
+    echo "  [Enter] Clean install (default — removes existing, installs fresh)"
+    echo ""
+    read -p "Choice [1/2/3 or Enter]: " _action_choice
+    case "${_action_choice}" in
+        1) INSTALL_ACTION="remove"    ;;
+        2) INSTALL_ACTION="update"    ;;
+        3) INSTALL_ACTION="reinstall" ;;
+        *) INSTALL_ACTION="clean"     ;;
+    esac
+    echo ""
+}
+
 # Backup the user's current .bashrc with a timestamp
 backup_bashrc() {
     local backup_dir="$HOME/.config/simple-shell/backups"

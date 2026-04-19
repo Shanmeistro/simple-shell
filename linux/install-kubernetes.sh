@@ -2,97 +2,210 @@
 set -e
 source ./scripts/helpers.sh
 
-print_header "Installing Kubernetes Tools for Linux"
+print_header "Kubernetes Tools Installer"
 
-# Stop and remove any existing Kubernetes tooling
-print_header "Removing Existing Kubernetes Tools"
+prompt_install_action "Kubernetes Tools"
 
-if command -v kubectl &>/dev/null; then
-    print_warning "Removing existing kubectl..."
-    sudo rm -f /usr/local/bin/kubectl
-fi
+# -----------------------------------------------------------------------
+# Remove helpers
+# -----------------------------------------------------------------------
+remove_kubectl() {
+    if command -v kubectl &>/dev/null; then
+        print_warning "Removing kubectl..."
+        sudo rm -f /usr/local/bin/kubectl
+    fi
+    if command -v kubectx &>/dev/null || command -v kubens &>/dev/null; then
+        print_warning "Removing kubectx/kubens..."
+        sudo rm -f /usr/local/bin/kubectx /usr/local/bin/kubens
+        sudo rm -rf /opt/kubectx
+    fi
+}
 
-if command -v helm &>/dev/null; then
-    print_warning "Removing existing Helm..."
-    sudo rm -f /usr/local/bin/helm
+remove_helm() {
+    # Always remove stale apt sources regardless of whether the binary exists
     sudo rm -f /etc/apt/sources.list.d/helm-stable-debian.list
     sudo rm -f /usr/share/keyrings/helm.gpg
-    sudo apt-get remove -y helm 2>/dev/null || true
+    if command -v helm &>/dev/null; then
+        print_warning "Removing Helm..."
+        sudo rm -f /usr/local/bin/helm
+        sudo apt-get remove -y helm 2>/dev/null || true
+    fi
+}
+
+remove_minikube() {
+    if command -v minikube &>/dev/null; then
+        print_warning "Stopping and removing minikube..."
+        minikube stop 2>/dev/null || true
+        minikube delete --all 2>/dev/null || true
+        sudo rm -f /usr/local/bin/minikube
+    fi
+}
+
+remove_k9s() {
+    if command -v k9s &>/dev/null; then
+        print_warning "Removing k9s..."
+        sudo rm -f /usr/local/bin/k9s
+    fi
+}
+
+# -----------------------------------------------------------------------
+# Remove only
+# -----------------------------------------------------------------------
+if [[ "$INSTALL_ACTION" == "remove" ]]; then
+    print_header "Removing All Kubernetes Tools"
+    remove_kubectl
+    remove_helm
+    remove_k9s
+    remove_minikube
+    print_success "All Kubernetes tools removed."
+    exit 0
 fi
 
-if command -v k9s &>/dev/null; then
-    print_warning "Removing existing k9s..."
-    sudo rm -f /usr/local/bin/k9s
+# -----------------------------------------------------------------------
+# Update only
+# -----------------------------------------------------------------------
+if [[ "$INSTALL_ACTION" == "update" ]]; then
+    print_header "Updating Kubernetes Tools"
+
+    if command -v kubectl &>/dev/null; then
+        print_header "Updating kubectl"
+        sudo rm -f /usr/local/bin/kubectl
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        rm kubectl
+        print_success "kubectl updated to $(kubectl version --client --short 2>/dev/null || kubectl version --client)"
+    else
+        print_warning "kubectl not installed — skipping update"
+    fi
+
+    if command -v helm &>/dev/null; then
+        print_header "Updating Helm"
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        print_success "Helm updated to $(helm version --short)"
+    else
+        print_warning "Helm not installed — skipping update"
+    fi
+
+    if command -v k9s &>/dev/null; then
+        print_header "Updating k9s"
+        sudo rm -f /usr/local/bin/k9s
+        K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep tag_name | cut -d '"' -f 4)
+        wget -q -O /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
+        tar -xzf /tmp/k9s.tar.gz -C /tmp k9s
+        sudo mv /tmp/k9s /usr/local/bin/
+        rm /tmp/k9s.tar.gz
+        print_success "k9s updated to $K9S_VERSION"
+    else
+        print_warning "k9s not installed — skipping update"
+    fi
+
+    if command -v minikube &>/dev/null; then
+        print_header "Updating minikube"
+        sudo rm -f /usr/local/bin/minikube
+        curl -fsSL \
+            "https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64" \
+            -o /tmp/minikube
+        sudo install -o root -g root -m 0755 /tmp/minikube /usr/local/bin/minikube
+        rm /tmp/minikube
+        print_success "minikube updated to $(minikube version --short)"
+    else
+        print_warning "minikube not installed — skipping update"
+    fi
+
+    print_success "Update complete."
+    exit 0
 fi
 
-if command -v kubectx &>/dev/null || command -v kubens &>/dev/null; then
-    print_warning "Removing existing kubectx/kubens..."
-    sudo rm -f /usr/local/bin/kubectx /usr/local/bin/kubens
-    sudo rm -rf /opt/kubectx
-fi
+# -----------------------------------------------------------------------
+# Reinstall or Clean install — ask which tools to install
+# -----------------------------------------------------------------------
+print_header "Select Tools to Install"
+echo "Select which Kubernetes tools to install:"
+echo ""
 
+read -p "  kubectl + kubectx/kubens (core CLI tools)? (Y/n): " _want_kubectl
+read -p "  Helm (Kubernetes package manager)?          (Y/n): " _want_helm
+read -p "  k9s (terminal UI dashboard)?               (Y/n): " _want_k9s
+read -p "  minikube (local Kubernetes cluster)?       (Y/n): " _want_minikube
+echo ""
+
+WANT_KUBECTL=true; WANT_HELM=true; WANT_K9S=true; WANT_MINIKUBE=true
+[[ "${_want_kubectl}"   =~ ^[Nn]$ ]] && WANT_KUBECTL=false
+[[ "${_want_helm}" =~      ^[Nn]$ ]] && WANT_HELM=false
+[[ "${_want_k9s}" =~       ^[Nn]$ ]] && WANT_K9S=false
+[[ "${_want_minikube}" =~  ^[Nn]$ ]] && WANT_MINIKUBE=false
+
+# Clean up existing installations before fresh install
+print_header "Removing Existing Kubernetes Tools"
+remove_kubectl
+remove_helm
+remove_k9s
+remove_minikube
 print_success "Existing Kubernetes tools cleaned up"
 
-# Install kubectl
-print_header "Installing kubectl"
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-rm kubectl
-print_success "kubectl installed"
+# -----------------------------------------------------------------------
+# kubectl + kubectx/kubens
+# -----------------------------------------------------------------------
+if [[ "$WANT_KUBECTL" == true ]]; then
+    print_header "Installing kubectl"
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    rm kubectl
+    print_success "kubectl installed"
 
-# Install Helm
-print_header "Installing Helm"
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-sudo apt-get install -y apt-transport-https
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-sudo apt-get update
-sudo apt-get install -y helm
-print_success "Helm installed"
+    print_header "Installing kubectx and kubens"
+    sudo git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx
+    sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
+    sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens
+    print_success "kubectx and kubens installed"
 
-# Install k9s (Kubernetes CLI dashboard)
-print_header "Installing k9s"
-K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep tag_name | cut -d '"' -f 4)
-wget -O /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
-tar -xzf /tmp/k9s.tar.gz -C /tmp k9s
-sudo mv /tmp/k9s /usr/local/bin/
-rm /tmp/k9s.tar.gz
-print_success "k9s installed"
+    # kubectl bash completion (idempotent)
+    print_header "Setting up kubectl completion"
+    BASHRC="$HOME/.bashrc"
+    grep -qxF 'source <(kubectl completion bash)' "$BASHRC" || \
+        echo 'source <(kubectl completion bash)' >> "$BASHRC"
+    grep -qxF 'alias k=kubectl' "$BASHRC" || \
+        echo 'alias k=kubectl' >> "$BASHRC"
+    grep -qxF 'complete -o default -F __start_kubectl k' "$BASHRC" || \
+        echo 'complete -o default -F __start_kubectl k' >> "$BASHRC"
+    print_success "kubectl completion configured"
+fi
 
-# Install kubectx and kubens
-print_header "Installing kubectx and kubens"
-sudo git clone https://github.com/ahmetb/kubectx /opt/kubectx
-sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
-sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens
-print_success "kubectx and kubens installed"
+# -----------------------------------------------------------------------
+# Helm — official install script (no apt repo dependency)
+# -----------------------------------------------------------------------
+if [[ "$WANT_HELM" == true ]]; then
+    print_header "Installing Helm"
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    print_success "Helm $(helm version --short) installed"
+fi
 
-# Set up kubectl bash completion (idempotent — avoid duplicate entries)
-print_header "Setting up kubectl completion"
-BASHRC="$HOME/.bashrc"
+# -----------------------------------------------------------------------
+# k9s
+# -----------------------------------------------------------------------
+if [[ "$WANT_K9S" == true ]]; then
+    print_header "Installing k9s"
+    K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep tag_name | cut -d '"' -f 4)
+    wget -q -O /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
+    tar -xzf /tmp/k9s.tar.gz -C /tmp k9s
+    sudo mv /tmp/k9s /usr/local/bin/
+    rm /tmp/k9s.tar.gz
+    print_success "k9s $K9S_VERSION installed"
+fi
 
-grep -qxF 'source <(kubectl completion bash)' "$BASHRC" || \
-    echo 'source <(kubectl completion bash)' >> "$BASHRC"
-
-grep -qxF 'alias k=kubectl' "$BASHRC" || \
-    echo 'alias k=kubectl' >> "$BASHRC"
-
-grep -qxF 'complete -o default -F __start_kubectl k' "$BASHRC" || \
-    echo 'complete -o default -F __start_kubectl k' >> "$BASHRC"
+# -----------------------------------------------------------------------
+# minikube
+# -----------------------------------------------------------------------
+if [[ "$WANT_MINIKUBE" == true ]]; then
+    print_header "Installing minikube"
+    curl -fsSL \
+        "https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64" \
+        -o /tmp/minikube
+    sudo install -o root -g root -m 0755 /tmp/minikube /usr/local/bin/minikube
+    rm /tmp/minikube
+    print_success "minikube $(minikube version --short) installed"
+fi
 
 print_success "Kubernetes Tools Installation Complete!"
 echo ""
 echo "Run 'source ~/.bashrc' to activate kubectl completion in your current session."
-
-
-print_success "Kubernetes Tools Installation Complete!"
-echo ""
-echo "🚢 Installed tools:"
-echo "• kubectl - Kubernetes command-line tool"
-echo "• helm - Kubernetes package manager"
-echo "• k9s - Terminal UI for Kubernetes"
-echo "• kubectx/kubens - Context and namespace switching"
-echo ""
-echo "💡 Quick start:"
-echo "• Check versions: 'kubectl version', 'helm version'"
-echo "• Use k9s: just run 'k9s'"
-echo "• Switch contexts: 'kubectx'"
-echo "• Switch namespaces: 'kubens'"

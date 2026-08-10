@@ -1,0 +1,30 @@
+services:
+  kubernetes:
+    image: simple-shell:kubernetes
+    container_name: simple-shell-kubernetes
+    working_dir: /workspaces/simple-shell
+    volumes:
+      - .:/workspaces/simple-shell
+      - /var/run/docker.sock:/var/run/docker.sock
+    stdin_open: true
+    tty: true
+
+  ansible-aap:
+    image: simple-shell:ansible-aap
+    container_name: simple-shell-ansible-aap
+    working_dir: /workspaces/simple-shell
+    volumes:
+      - .:/workspaces/simple-shell
+      - /var/run/docker.sock:/var/run/docker.sock
+    stdin_open: true
+    tty: true
+
+  rhel-lab:
+    image: simple-shell:rhel-lab
+    container_name: simple-shell-rhel-lab
+    working_dir: /workspaces/simple-shell
+    volumes:
+      - .:/workspaces/simple-shell
+      - /var/run/docker.sock:/var/run/docker.sock
+    stdin_open: true
+    tty: true

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] - 2026-08-10
+
+### Added
+
+- Dev Container support for three lab-oriented environments:
+  - Kubernetes
+  - Ansible Automation Platform
+  - RHEL-based lab work
+- Dockerfiles and VS Code devcontainer definitions under `devcontainers/`
+- Lab helper scripts for building and removing local lab images:
+  - `labs/create.sh`
+  - `labs/destroy.sh`
+- A compose-based wrapper at `compose.yaml` for launching the lab environments consistently
+
+### Changed
+
+- Updated the root README to document the new Dev Container and lab workflow
+- Added macOS support guidance and updated the project structure overview
+
+### Notes
+
+- The compose-based workflow expects the corresponding lab images to exist locally before startup
+- Docker access is mounted into the containers to support container-in-container workflows where needed
+
+---
+
 ## [0.1.5] - 2026-04-18
 
 ### Overview

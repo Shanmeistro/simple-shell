@@ -16,6 +16,7 @@ BLUE=$'\033[34m'
 CYAN=$'\033[36m'
 MAGENTA=$'\033[35m'
 RESET=$'\033[0m'
+NAVIGATION_TARGET="stay"
 
 print_header() {
   printf '%b\n' "${BLUE}🍎 ${CYAN}$1${RESET}"
@@ -53,14 +54,30 @@ pause_with_options() {
   nav_choice=$(echo "$nav_choice" | tr -d '[:space:]')
 
   case "$nav_choice" in
-    b|B) return 1 ;;
-    c|C) return 2 ;;
-    m|M) return 3 ;;
-    q|Q) exit 0 ;;
-    r|R) return 4 ;;
-    l|L) return 5 ;;
-    *) return 0 ;;
+    b|B)
+      NAVIGATION_TARGET="category"
+      ;;
+    c|C)
+      NAVIGATION_TARGET="category"
+      ;;
+    m|M)
+      NAVIGATION_TARGET="main"
+      ;;
+    q|Q)
+      NAVIGATION_TARGET="quit"
+      ;;
+    r|R)
+      NAVIGATION_TARGET="repeat"
+      ;;
+    l|L)
+      NAVIGATION_TARGET="list"
+      ;;
+    *)
+      NAVIGATION_TARGET="stay"
+      ;;
   esac
+
+  return 0
 }
 
 get_tool_version() {
@@ -98,7 +115,7 @@ scan_installed_packages() {
 
   if ! command_exists brew; then
     echo -e "${RED}Homebrew is not available.${RESET}"
-    return 1
+    return 0
   fi
 
   printf '%b\n' "${YELLOW}Formulae${RESET}"
@@ -120,11 +137,26 @@ scan_installed_packages() {
   printf '%b\n' "${YELLOW}Tip: use 'brew outdated' for a quick upgrade check.${RESET}"
   echo ""
   pause_with_options "action"
-  local nav_result=$?
-  case $nav_result in
-    5) list_installed_tools; return $? ;;
-    *) return $nav_result ;;
+
+  case "$NAVIGATION_TARGET" in
+    main)
+      return 0
+      ;;
+    category)
+      return 0
+      ;;
+    list)
+      list_installed_tools
+      ;;
+    quit)
+      exit 0
+      ;;
+    *)
+      return 0
+      ;;
   esac
+
+  return 0
 }
 
 list_installed_tools() {
@@ -162,10 +194,23 @@ list_installed_tools() {
   printf '%b\n' "${YELLOW}Note: Only installed tools are shown above.${RESET}"
 
   pause_with_options "action"
-  local nav_result=$?
-  case $nav_result in
-    5) list_installed_tools; return $? ;;
-    *) return $nav_result ;;
+
+  case "$NAVIGATION_TARGET" in
+    main)
+      return 0
+      ;;
+    category)
+      return 0
+      ;;
+    list)
+      list_installed_tools
+      ;;
+    quit)
+      exit 0
+      ;;
+    *)
+      return 0
+      ;;
   esac
 }
 
@@ -249,37 +294,54 @@ manage_tool() {
       u)
         update_package "$tool"
         ;;
-      b|B) return 1 ;;
-      m|M) return 3 ;;
+      b|B)
+        NAVIGATION_TARGET="category"
+        return 0
+        ;;
+      m|M)
+        NAVIGATION_TARGET="main"
+        return 0
+        ;;
       l|L)
         list_installed_tools
-        local list_result=$?
-        case $list_result in
-          1|2|3) return $list_result ;;
-          *) continue ;;
-        esac
+        if [[ "$NAVIGATION_TARGET" == "main" ]]; then
+          return 0
+        fi
+        continue
         ;;
-      q|Q) exit 0 ;;
-      *) echo "Invalid option." ;;
+      q|Q)
+        exit 0
+        ;;
+      *)
+        echo "Invalid option."
+        ;;
     esac
 
     pause_with_options "action"
-    local nav_result=$?
-    case $nav_result in
-      1) continue ;;
-      2) return 2 ;;
-      3) return 3 ;;
-      4) continue ;;
-      5)
-        list_installed_tools
-        local list_result=$?
-        case $list_result in
-          1|2) return $list_result ;;
-          3) return 3 ;;
-          *) continue ;;
-        esac
+
+    case "$NAVIGATION_TARGET" in
+      category)
+        return 0
         ;;
-      0) continue ;;
+      main)
+        return 0
+        ;;
+      list)
+        list_installed_tools
+        if [[ "$NAVIGATION_TARGET" == "main" ]]; then
+          return 0
+        fi
+        continue
+        ;;
+      quit)
+        exit 0
+        ;;
+      repeat)
+        continue
+        ;;
+      *)
+        continue
+        ;;
     esac
   done
 }
@@ -338,19 +400,23 @@ show_category_menu() {
     read -r -p "Enter option: " tool_choice
 
     case "$tool_choice" in
-      b|B) return 1 ;;
+      b|B)
+        NAVIGATION_TARGET="main"
+        return 0
+        ;;
       l|L)
         list_installed_tools
-        local list_result=$?
-        case $list_result in
-          1|2|3) return $list_result ;;
-          *) continue ;;
-        esac
+        if [[ "$NAVIGATION_TARGET" == "main" ]]; then
+          return 0
+        fi
+        continue
         ;;
       s|S)
         scan_installed_packages
         ;;
-      q|Q) exit 0 ;;
+      q|Q)
+        exit 0
+        ;;
       *)
         local tool_result=0
         case "$category_num" in
@@ -410,12 +476,12 @@ show_category_menu() {
             ;;
         esac
 
-        case $tool_result in
-          1) continue ;;
-          2) continue ;;
-          3) return 3 ;;
-          0) continue ;;
-        esac
+        if [[ "$NAVIGATION_TARGET" == "main" ]]; then
+          NAVIGATION_TARGET="stay"
+          return 0
+        fi
+
+        continue
         ;;
     esac
   done
@@ -434,11 +500,21 @@ while true; do
   read -r -p "Enter your choice: " category_choice
 
   case "$category_choice" in
-    1) show_category_menu 1 "Core CLI" ;;
-    2) show_category_menu 2 "Developer Tools" ;;
-    3) show_category_menu 3 "Cloud & DevOps" ;;
-    4) show_category_menu 4 "Shell & Terminal" ;;
-    5) show_category_menu 5 "Productivity & Apps" ;;
+    1)
+      show_category_menu 1 "Core CLI"
+      ;;
+    2)
+      show_category_menu 2 "Developer Tools"
+      ;;
+    3)
+      show_category_menu 3 "Cloud & DevOps"
+      ;;
+    4)
+      show_category_menu 4 "Shell & Terminal"
+      ;;
+    5)
+      show_category_menu 5 "Productivity & Apps"
+      ;;
     l|L)
       list_installed_tools
       ;;

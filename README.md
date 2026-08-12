@@ -163,6 +163,23 @@ docker compose up -d rhel-lab
 
 Open the repository in VS Code and use the Dev Containers extension to reopen the folder in the appropriate container.
 
+### CI workflow for Dev Container builds
+
+This project includes a GitHub Actions workflow in `.github/workflows/build-devcontainers.yml` that builds and pushes container images to GHCR.
+
+- On `push` to `main`, only the container definitions changed in `devcontainers/<name>/` are built.
+- On manual workflow dispatch, set the `container` input to a comma-separated list of container names to build.
+- If `container` is blank during manual dispatch, the workflow builds only the changed containers.
+- Use `all` as the input value to build every container.
+
+Examples:
+
+- `azure`
+- `azure,devops`
+- `all`
+
+If you want to build only changed containers from a manual run, leave the input empty.
+
 ## Optional Tools
 
 Run any of these independently after the initial bootstrap:

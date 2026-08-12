@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.7] - 2026-08-12
+
+### Added
+
+- GitHub Actions workflow for selective Dev Container builds:
+  - builds only changed container folders on push to `main`
+  - supports manual dispatch with a comma-separated `container` input
+  - supports `all` to build every container
+- Documentation for manual container selection in `README.md`
+
+### Changed
+
+- Fixed CI workflow selection logic so manual dispatch and changed-path detection both work correctly
+
 ## [0.1.6] - 2026-08-10
 
 ### Added

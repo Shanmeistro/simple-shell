@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Fixed CI workflow selection logic so manual dispatch and changed-path detection both work correctly
+- Updated `compose.yaml` with build contexts and GHCR image names for lab containers
+- Added README docs for building, publishing, and running Dev Container images
 
 ## [0.1.6] - 2026-08-10
 

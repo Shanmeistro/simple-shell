@@ -1,6 +1,9 @@
 services:
   kubernetes:
-    image: simple-shell:kubernetes
+    build:
+      context: ./devcontainers/kubernetes
+      dockerfile: Dockerfile
+    image: ghcr.io/shanmeistro/simple-shell-kubernetes:latest
     container_name: simple-shell-kubernetes
     working_dir: /workspaces/simple-shell
     volumes:
@@ -10,7 +13,10 @@ services:
     tty: true
 
   ansible-aap:
-    image: simple-shell:ansible-aap
+    build:
+      context: ./devcontainers/ansible-aap
+      dockerfile: Dockerfile
+    image: ghcr.io/shanmeistro/simple-shell-ansible-aap:latest
     container_name: simple-shell-ansible-aap
     working_dir: /workspaces/simple-shell
     volumes:
@@ -20,7 +26,10 @@ services:
     tty: true
 
   rhel-lab:
-    image: simple-shell:rhel-lab
+    build:
+      context: ./devcontainers/rhel-lab
+      dockerfile: Dockerfile
+    image: ghcr.io/shanmeistro/simple-shell-rhel-lab:latest
     container_name: simple-shell-rhel-lab
     working_dir: /workspaces/simple-shell
     volumes:

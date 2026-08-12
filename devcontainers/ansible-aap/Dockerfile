@@ -20,10 +20,9 @@ RUN apt-get update \
         zip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip \
-    && python3 -m pip install --no-cache-dir ansible ansible-core ansible-lint yamllint pytest
+RUN python3 -m pip install --no-cache-dir --break-system-packages ansible ansible-core ansible-lint yamllint pytest
 
-RUN curl -fsSL https://raw.githubusercontent.com/ansible/ansible-lint/main/contrib/get-ansible.sh | bash
-
+# The ansible-lint package is installed via pip. The previous install script
+# URL is no longer valid, so it is omitted to keep this image build stable.
 USER vscode
 WORKDIR /workspaces

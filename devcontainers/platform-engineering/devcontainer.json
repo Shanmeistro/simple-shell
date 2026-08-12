@@ -1,0 +1,11 @@
+{
+  "name": "simple-shell-platform-engineering",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": []
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "simple-shell-devops",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": []
+    }
+  }
+}

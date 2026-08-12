@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           container="${{ matrix.container }}"
-          build=false
+          build=true
 
           if [[ "${{ github.event_name }}" == 'workflow_dispatch' ]]; then
             input="${{ github.event.inputs.container }}"

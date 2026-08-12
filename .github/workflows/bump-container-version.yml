@@ -1,0 +1,82 @@
+name: Bump container VERSION on merged PR
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  bump:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Get PR files
+        id: pr-files
+        run: |
+          OWNER=${GITHUB_REPOSITORY%/*}
+          REPO=${GITHUB_REPOSITORY#*/}
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          echo "Fetching files for PR $PR_NUMBER"
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER/files" | jq -r '.[].filename' > pr_files.txt
+          cat pr_files.txt
+
+      - name: Determine changed containers
+        id: containers
+        run: |
+          changed=""
+          for c in kubernetes ansible-aap rhel-lab azure devops sre platform-engineering; do
+            if grep -q "^devcontainers/$c/" pr_files.txt; then
+              changed="$changed $c"
+            fi
+          done
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: Determine bump type from PR labels
+        id: bump
+        run: |
+          bump_type="patch"
+          if jq -r '.pull_request.labels[]?.name' $GITHUB_EVENT_PATH | grep -q '^major$'; then bump_type=major; fi
+          if jq -r '.pull_request.labels[]?.name' $GITHUB_EVENT_PATH | grep -q '^minor$'; then bump_type=minor; fi
+          if jq -r '.pull_request.labels[]?.name' $GITHUB_EVENT_PATH | grep -q '^patch$'; then bump_type=patch; fi
+          echo "bump=$bump_type" >> "$GITHUB_OUTPUT"
+
+      - name: Bump versions and commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          changed="${{ steps.containers.outputs.changed }}"
+          bump="${{ steps.bump.outputs.bump }}"
+          echo "Changed containers: $changed"
+          for c in $changed; do
+            VFILE="devcontainers/$c/VERSION"
+            if [ ! -f "$VFILE" ]; then
+              echo "0.1.0" > "$VFILE"
+            fi
+            ver=$(cat "$VFILE")
+            IFS='.' read -r major minor patch <<< "$ver"
+            case "$bump" in
+              major)
+                major=$((major+1)); minor=0; patch=0
+                ;;
+              minor)
+                minor=$((minor+1)); patch=0
+                ;;
+              *)
+                patch=$((patch+1))
+                ;;
+            esac
+            new="v${major}.${minor}.${patch}"
+            echo "Bumping $c: $ver -> ${major}.${minor}.${patch}"
+            echo "${major}.${minor}.${patch}" > "$VFILE"
+            git add "$VFILE"
+            git commit -m "ci: bump $c version to ${new} [skip ci]" || echo "no changes to commit"
+          done
+          git push origin HEAD:main || echo "push failed; review permissions"

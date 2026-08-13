@@ -21,8 +21,7 @@ RUN apt-get update \
         zip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip \
-    && python3 -m pip install --no-cache-dir ansible ansible-core yamllint pytest
+RUN python3 -m pip install --no-cache-dir ansible ansible-core yamllint pytest
 
 RUN echo 'export PS1="\\u@rhel-lab:\\w\\$ "' >> /home/vscode/.bashrc
 

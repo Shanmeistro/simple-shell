@@ -233,9 +233,10 @@ Multi-arch publish example:
 docker buildx build --platform linux/amd64,linux/arm64 --push \
   -t ghcr.io/shanmeistro/simple-shell-kubernetes:latest \
   -t ghcr.io/shanmeistro/simple-shell-kubernetes:v1.0.0 \
-  -t ghcr.io/shanmeistro/simple-shell-kubernetes:${GITHUB_SHA} \
   -f devcontainers/kubernetes/Dockerfile devcontainers/kubernetes
 ```
+
+The repository also includes a `VERSION` file used by CI to tag images with the current release version.
 
 #### 5) Use the labs in VS Code
 

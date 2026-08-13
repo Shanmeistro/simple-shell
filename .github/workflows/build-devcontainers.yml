@@ -13,52 +13,18 @@ on:
         default: ""
 
 jobs:
-  detect-changed-containers:
-    runs-on: ubuntu-latest
-    outputs:
-      kubernetes: ${{ steps.paths-filter.outputs.kubernetes }}
-      ansible-aap: ${{ steps.paths-filter.outputs.ansible-aap }}
-      rhel-lab: ${{ steps.paths-filter.outputs.rhel-lab }}
-      azure: ${{ steps.paths-filter.outputs.azure }}
-      devops: ${{ steps.paths-filter.outputs.devops }}
-      sre: ${{ steps.paths-filter.outputs.sre }}
-      platform-engineering: ${{ steps.paths-filter.outputs.platform-engineering }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Detect changed container folders
-        id: paths-filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            kubernetes: 'devcontainers/kubernetes/**'
-            ansible-aap: 'devcontainers/ansible-aap/**'
-            rhel-lab: 'devcontainers/rhel-lab/**'
-            azure: 'devcontainers/azure/**'
-            devops: 'devcontainers/devops/**'
-            sre: 'devcontainers/sre/**'
-            platform-engineering: 'devcontainers/platform-engineering/**'
-
   build:
-    needs: detect-changed-containers
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - container: kubernetes
-            output-key: kubernetes
           - container: ansible-aap
-            output-key: ansible-aap
           - container: rhel-lab
-            output-key: rhel-lab
           - container: azure
-            output-key: azure
           - container: devops
-            output-key: devops
           - container: sre
-            output-key: sre
           - container: platform-engineering
-            output-key: platform-engineering
 
     permissions:
       contents: read
@@ -66,6 +32,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          echo "IMAGE_VERSION=v$(cat VERSION)" >> "$GITHUB_ENV"
 
       - name: "ci: determine whether this container should build"
         id: should-build
@@ -90,9 +61,7 @@ jobs:
               done
             fi
           else
-            if [[ "${{ needs.detect-changed-containers.outputs[matrix.output-key] }}" == 'true' ]]; then
-              build=true
-            fi
+            build=true
           fi
 
           echo "build=$build" >> "$GITHUB_OUTPUT"
@@ -123,5 +92,5 @@ jobs:
           push: true
           tags: |
             ghcr.io/shanmeistro/simple-shell-${{ matrix.container }}:latest
+            ghcr.io/shanmeistro/simple-shell-${{ matrix.container }}:${{ env.IMAGE_VERSION }}
             ghcr.io/shanmeistro/simple-shell-${{ matrix.container }}:v${{ github.run_number }}
-            ghcr.io/shanmeistro/simple-shell-${{ matrix.container }}:${{ github.sha }}
